@@ -14,7 +14,10 @@ inputs:
 
 runs:
   using: 'docker'
-  image: 'Dockerfile'  # Tells GitHub Actions to use the Dockerfile in this directory
+  image: 'Dockerfile'  # Use Dockerfile to build the image
+  args:
+    - "${{ inputs.fpr_file }}"
+    - "${{ inputs.output_csv }}"
 
 branding:
   icon: 'download'
