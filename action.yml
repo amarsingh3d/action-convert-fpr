@@ -1,0 +1,22 @@
+name: Extract Fortify Data from .fpr
+
+description: This action extracts data from a .fpr file, processes it, and outputs a CSV file.
+
+inputs:
+  fpr_file:
+    description: 'The path to the .fpr file'
+    required: true
+    default: './audit.fpr'
+  output_csv:
+    description: 'The path to the output CSV file'
+    required: true
+    default: './output.csv'
+
+runs:
+  using: 'python'
+  main: 'main.py'
+
+branding:
+  icon: 'download'
+  color: 'blue'
+
