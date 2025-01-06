@@ -13,10 +13,9 @@ inputs:
     default: './output.csv'
 
 runs:
-  using: 'python'
-  main: 'main.py'
+  using: 'docker'
+  image: 'Dockerfile'  # Tells GitHub Actions to use the Dockerfile in this directory
 
 branding:
   icon: 'download'
   color: 'blue'
-
