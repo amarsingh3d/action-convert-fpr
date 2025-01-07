@@ -14,4 +14,4 @@ runs:
 outputs:
   output_file:
     description: Path to the output file
-    value: "/action/output.txt"
+    value: "output.txt"
