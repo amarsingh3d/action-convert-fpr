@@ -1,24 +1,12 @@
-name: Extract Fortify Data from .fpr
-
-description: This action extracts data from a .fpr file, processes it, and outputs a CSV file.
-
+name: Extract Vulnerabilities from FPR
+description: A custom action to extract vulnerabilities from a Fortify FPR file using a Python script.
+author: Your Name
 inputs:
   fpr_file:
-    description: 'The path to the .fpr file'
+    description: Path to the FPR file.
     required: true
-    default: './audit.fpr'
-  output_csv:
-    description: 'The path to the output CSV file'
-    required: true
-    default: './output.csv'
-
 runs:
-  using: 'docker'
-  image: 'Dockerfile'  # Use Dockerfile to build the image
+  using: "docker"
+  image: "Dockerfile"
   args:
     - "${{ inputs.fpr_file }}"
-    - "${{ inputs.output_csv }}"
-
-branding:
-  icon: 'download'
-  color: 'blue'
