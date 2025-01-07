@@ -12,4 +12,4 @@ COPY requirements.txt /action/requirements.txt
 RUN pip install -r /action/requirements.txt
 
 # Set the entrypoint for the action (what to run when the action is triggered)
-ENTRYPOINT ["python", "/action/main.py"]
+ENTRYPOINT ["python", "/action/main.py", "${INPUT_FPR_FILE}"] > /action/output.txt
