@@ -10,7 +10,7 @@ runs:
   image: "Dockerfile"
   args:
     - "${{ inputs.fpr_file }}"
-    - "${{ github.workspace }}/output.txt"
+    - "${{ inputs.output_path }}"
 
 outputs:
   output_file:
