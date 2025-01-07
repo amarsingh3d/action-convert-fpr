@@ -8,10 +8,9 @@ inputs:
 runs:
   using: "docker"
   image: "Dockerfile"
-  env:
-    OUTPUT_PATH: "${{ github.workspace }}/output.txt"
   args:
     - "${{ inputs.fpr_file }}"
+    - "${{ github.workspace }}/output.txt"
 
 outputs:
   output_file:
