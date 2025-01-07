@@ -6,7 +6,7 @@ import sys
 from tabulate import tabulate
 
 # Function to extract audit details from the given FPR file
-def extract_audit_details(fpr_path):
+def extract_audit_details(fpr_path, output_path):
     try:
         # Define the path to extract the XML content
         extraction_path = os.getcwd()  # Use current working directory
@@ -64,19 +64,22 @@ def extract_audit_details(fpr_path):
             print("Extracted Vulnerabilities:")
             print(tabulate(df, headers='keys', tablefmt='grid', showindex=False))
 
-        # Save the DataFrame as a CSV for further use
-        output_csv_path = os.path.join(extraction_path, 'vulnerabilities.csv')
-        df.to_csv(output_csv_path, index=False)
-        print(f"Vulnerabilities saved to: {output_csv_path}")
+        # Save the vulnerabilities report to the specified output file
+        with open(output_path, "w") as f:
+            f.write(tabulate(df, headers='keys', tablefmt='grid', showindex=False))
+
+        print(f"Vulnerabilities saved to: {output_path}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
 
 # Main execution block
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python3 main.py <path_to_fpr_file>")
+    if len(sys.argv) != 3:
+        print("Usage: python3 main.py <path_to_fpr_file> <output_file_path>")
         sys.exit(1)
 
     fpr_path = sys.argv[1]
-    extract_audit_details(fpr_path)
+    output_path = sys.argv[2]
+
+    extract_audit_details(fpr_path, output_path)
