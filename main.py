@@ -1,92 +1,82 @@
 import zipfile
 import xml.etree.ElementTree as ET
-import csv
-import argparse
-from tabulate import tabulate  # Import the tabulate library
+import pandas as pd
+import os
+import sys
+from tabulate import tabulate
 
-# Function to extract audit.xml from .fpr file
-def extract_audit_xml(fpr_file):
-    with zipfile.ZipFile(fpr_file, 'r') as zip_ref:
-        # Check the list of files in the zip to find audit.xml
-        if 'audit.xml' in zip_ref.namelist():
-            # Read audit.xml as bytes
-            with zip_ref.open('audit.xml') as audit_file:
-                return audit_file.read()
-        else:
-            raise ValueError("audit.xml not found in the .fpr file")
-
-# Function to parse the XML and extract relevant information
-def parse_audit_xml(xml_data):
-    # Parse the XML data
-    root = ET.fromstring(xml_data)
-    
-    # Define the namespaces to search correctly
-    namespaces = {
-        'ns1': 'xmlns://www.fortify.com/schema/audit'
-    }
-
-    # Find the removed issues
-    removed_issues = root.findall('.//ns1:RemovedIssue', namespaces)
-    
-    # List to hold extracted information
-    extracted_data = []
-
-    # Iterate through the removed issues and extract the relevant details
-    for issue in removed_issues:
-        category = issue.find('ns1:Category', namespaces).text
-        file = issue.find('ns1:File', namespaces).text
-        confidence = issue.find('ns1:Confidence', namespaces).text
-        severity = issue.find('ns1:Severity', namespaces).text
-        impact = issue.find('ns1:Impact', namespaces).text
-        
-        # Append the data as a tuple
-        extracted_data.append([category, file, confidence, severity, impact])
-
-    return extracted_data
-
-# Function to write data to CSV
-def write_to_csv(data, output_file):
-    with open(output_file, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        # Write the header
-        writer.writerow(['Category', 'File', 'Confidence', 'Severity', 'Impact'])
-        # Write the data rows
-        writer.writerows(data)
-
-# Function to print data in table format
-def print_table(data):
-    # Print the table with headers and rows
-    headers = ['Category', 'File', 'Confidence', 'Severity', 'Impact']
-    print(tabulate(data, headers=headers, tablefmt='grid'))
-
-# Main function to process the .fpr file and create a CSV
-def process_fpr_to_csv(fpr_file, output_csv):
+# Function to extract audit details from the given FPR file
+def extract_audit_details(fpr_path):
     try:
-        # Step 1: Extract audit.xml from the .fpr file
-        audit_xml_data = extract_audit_xml(fpr_file)
-        
-        # Step 2: Parse the extracted XML data
-        extracted_data = parse_audit_xml(audit_xml_data)
-        
-        # Step 3: Print the extracted data as a table
-        print_table(extracted_data)
-        
-        # Step 4: Write the extracted data to a CSV file
-        write_to_csv(extracted_data, output_csv)
-        print(f"Data has been successfully written to {output_csv}")
+        # Define the path to extract the XML content
+        extraction_path = os.getcwd()  # Use current working directory
+
+        # Ensure extraction path exists
+        os.makedirs(extraction_path, exist_ok=True)
+
+        # Extract the FPR contents
+        with zipfile.ZipFile(fpr_path, 'r') as fpr_zip:
+            fpr_zip.extractall(extraction_path)
+
+        # Locate and parse the audit.fvdl file
+        fvdl_path = os.path.join(extraction_path, 'audit.fvdl')
+        if not os.path.exists(fvdl_path):
+            print("audit.fvdl not found in the FPR archive.")
+            return
+
+        tree = ET.parse(fvdl_path)
+        root = tree.getroot()
+
+        # Namespace handling for FVDL
+        namespace = {'fvdl': 'xmlns://www.fortifysoftware.com/schema/fvdl'}
+
+        vulnerabilities = []
+
+        # Extract Vulnerability Details
+        for vuln in root.findall('.//fvdl:Vulnerability', namespace):
+            kingdom = vuln.findtext('.//fvdl:Kingdom', default='', namespaces=namespace)
+            vuln_type = vuln.findtext('.//fvdl:Type', default='', namespaces=namespace)
+            severity = vuln.findtext('.//fvdl:DefaultSeverity', default='', namespaces=namespace)
+            subtype = vuln.findtext('.//fvdl:Subtype', default='', namespaces=namespace)
+
+            # Extract FunctionDeclarationSourceLocation attributes
+            func_decl_elem = vuln.find('.//fvdl:FunctionDeclarationSourceLocation', namespace)
+            if func_decl_elem is not None:
+                func_decl_path = func_decl_elem.get('path', '')
+                func_decl_line = func_decl_elem.get('line', '')
+                function_decl_source_loc = f"{func_decl_path} (line {func_decl_line})"
+            else:
+                function_decl_source_loc = ''
+
+            vulnerabilities.append({
+                'Kingdom': kingdom,
+                'Type': vuln_type,
+                'Subtype': subtype,
+                'Severity': severity,
+                'SourceLocation': function_decl_source_loc
+            })
+
+        # Convert to DataFrame for better display
+        df = pd.DataFrame(vulnerabilities)
+        if df.empty:
+            print("No vulnerabilities found.")
+        else:
+            print("Extracted Vulnerabilities:")
+            print(tabulate(df, headers='keys', tablefmt='grid', showindex=False))
+
+        # Save the DataFrame as a CSV for further use
+        output_csv_path = os.path.join(extraction_path, 'vulnerabilities.csv')
+        df.to_csv(output_csv_path, index=False)
+        print(f"Vulnerabilities saved to: {output_csv_path}")
 
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"An error occurred: {e}")
 
-# Main function to parse arguments and execute the script
-if __name__ == '__main__':
-    # Set up argument parsing
-    parser = argparse.ArgumentParser(description="Extract data from a .fpr file and write to a CSV.")
-    parser.add_argument('fpr_file', help="The path to the .fpr file")
-    parser.add_argument('output_csv', help="The path to the output CSV file")
+# Main execution block
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: python3 main.py <path_to_fpr_file>")
+        sys.exit(1)
 
-    # Parse the arguments
-    args = parser.parse_args()
-
-    # Call the function with the provided arguments
-    process_fpr_to_csv(args.fpr_file, args.output_csv)
+    fpr_path = sys.argv[1]
+    extract_audit_details(fpr_path)
