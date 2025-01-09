@@ -1,18 +1,11 @@
-name: Extract Vulnerabilities from FPR
-description: A custom action to extract vulnerabilities from a Fortify FPR file using a Python script.
-author: Your Name
+name: "Extract Audit Details from FPR"
+description: "Extracts vulnerability audit details from a Fortify FPR file."
 inputs:
-  fpr_file:
-    description: Path to the FPR file.
-    required: true
+  fpr_path:
+    description: "Path to the .fpr file (optional, defaults to the most recent .fpr in the current directory)"
+    required: false
 runs:
   using: "docker"
   image: "Dockerfile"
   args:
-    - "${{ inputs.fpr_file }}"
-    - "${{ inputs.output_path }}"
-
-outputs:
-  output_file:
-    description: Path to the output file
-    value: "output.txt"
+    - ${{ inputs.fpr_path }}
