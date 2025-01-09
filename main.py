@@ -8,6 +8,14 @@ from tabulate import tabulate
 # Function to extract audit details from the given FPR file
 def extract_audit_details(fpr_path):
     try:
+        # Validate .fpr file extension
+        if not fpr_path.endswith('.fpr'):
+            print("The provided file is not an FPR file.")
+            return
+
+        # Define a fixed output file name
+        output_path = "audit_report.txt"
+
         # Define the path to extract the XML content
         extraction_path = os.getcwd()  # Use current working directory
 
@@ -64,34 +72,32 @@ def extract_audit_details(fpr_path):
             print("Extracted Vulnerabilities:")
             print(tabulate(df, headers='keys', tablefmt='grid', showindex=False))
 
-        # Save the DataFrame as a CSV for further use
-        output_csv_path = os.path.join(extraction_path, 'vulnerabilities.csv')
-        df.to_csv(output_csv_path, index=False)
-        print(f"Vulnerabilities saved to: {output_csv_path}")
+        # Save the vulnerabilities report to the specified output file
+        with open(output_path, "w") as f:
+            f.write(tabulate(df, headers='keys', tablefmt='grid', showindex=False))
+
+        print(f"Vulnerabilities saved to: {output_path}")
 
     except Exception as e:
         print(f"An error occurred: {e}")
 
 # Main execution block
 if __name__ == "__main__":
-    # Check for an FPR file in the current directory if no path is provided
-    if len(sys.argv) == 1:
-        current_dir = os.getcwd()
-        fpr_files = [f for f in os.listdir(current_dir) if f.endswith('.fpr')]
+    fpr_path = None
 
-        if len(fpr_files) == 0:
-            print("No FPR file found in the current directory.")
-            sys.exit(1)
-        elif len(fpr_files) > 1:
-            print("Multiple FPR files found. Please specify one explicitly.")
-            sys.exit(1)
-        else:
-            fpr_path = os.path.join(current_dir, fpr_files[0])
-            print(f"Using FPR file: {fpr_path}")
-    elif len(sys.argv) == 2:
-        fpr_path = sys.argv[1]
-    else:
-        print("Usage: python3 main.py [<path_to_fpr_file>]")
+    # Check for .fpr files in the current directory
+    fpr_files = [file for file in os.listdir(os.getcwd()) if file.endswith('.fpr')]
+
+    if len(fpr_files) == 0:
+        print("No .fpr files found in the current directory.")
         sys.exit(1)
+    elif len(fpr_files) == 1:
+        fpr_path = fpr_files[0]
+        print(f"Found .fpr file: {fpr_path}")
+    else:
+        # Sort files by last modified time, most recent first
+        fpr_files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+        fpr_path = fpr_files[0]
+        print(f"Multiple .fpr files found. Picking the most recently updated file: {fpr_path}")
 
     extract_audit_details(fpr_path)
