@@ -12,4 +12,4 @@ COPY requirements.txt /action/requirements.txt
 RUN pip install -r /action/requirements.txt
 
 # Set the entrypoint for the action (what to run when the action is triggered)
-ENTRYPOINT ["python", "/action/main.py"] > ${GITHUB_WORKSPACE}/output.txt
+ENTRYPOINT ["python", "/action/main.py"]
